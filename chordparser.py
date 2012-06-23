@@ -1,19 +1,18 @@
 import re
 import sys
-from operator import add
+from operator import add, and_
+from itertools import takewhile, imap
 
-chord_re = re.compile(r"\b([A-Ga-g][b#]?)(m)?((?:maj)?[0-9])?(sus[0-9])?(/[A-G][b#]?)?\s")
+chord_re = re.compile(r"\b([A-Ga-g][b#]?)(m)?((?:maj)?[0-9])?(sus[0-9]|add[0-9])?(/[A-Ga-g][b#]?)?\s")
+text_line = re.compile(r"(^[aA] \w|\w a \w)")
 
-
-if( len( sys.argv ) > 1 ):
-    text = open( sys.argv[1] )
-   
 def parse(file):
     for line in file:
-        for chord in chord_re.findall(line):
-            chord = list(chord)
-            chord[0] = chord[0].capitalize()
-            yield chord
+        if not text_line.search(line):
+            for chord in chord_re.findall(line):
+                chord = list(chord)
+                chord[0] = chord[0].capitalize()
+                yield chord
 
 number = {
     "A":0,
@@ -60,8 +59,6 @@ def major7th(ch):
 def minor7th(ch):
     return [ch[1], 10]
 
-pressed = [False for i in range(12)]
-
 def noteify(chord):
     root = number[ chord[0] ]
     quality = [4, 7]  
@@ -74,9 +71,9 @@ def noteify(chord):
 
     return root, root+quality[0], root+quality[1]
 
-def track_notes(ch):
+def track_notes(pressed, ch):
     for n in ch:
-        pressed[n%12] = True
+        pressed[n%12] += 1
 
 major_scale = [2,2,1,2,2,2,1]
 
@@ -93,27 +90,50 @@ for root in range(12):
     scales.append(scale)
 
 def convert_scale(pressed):
-    for i, n in zip(range(12), pressed):
+    for i, n in enumerate(pressed):
         if n:
             yield i
 
 def convert_universal( key, ch ):
-    return number[ ch[0] ] - key
+    return (number[ ch[0] ] - key) % 12, ch[2]
 
+def ask_key(default='C'):
+    i = raw_input("In which key?[%s]: " % default)
+    if i == '':
+        i = default
 
-if __name__ == "__main__":
-    file = list(parse( open (sys.argv[1] ) ))
-    for n in file:
-        track_notes(noteify(n))
+    return number[i]
 
+def get_key(pressed):
+    keys = []
     s = set( convert_scale( pressed ))
-    key = None
 
     for i, scale in enumerate(scales):
         if s.issubset(scale):
-            key = i
-            print chords[i] + " Major"
-            break
-    
-    for n in file:
-        print roman[convert_universal( key, n )]
+            keys.append(i)
+
+    if not keys:
+        key = ask_key()
+    elif len(keys) > 1:
+        key = ask_key(keys[0])
+    else:
+        key = keys[0]
+
+    return key
+
+def get_universal(f):
+    pressed = [0] * 12
+    with open(f) as source:
+        chords = list(parse(source))
+
+    for n in chords:
+        track_notes(pressed, noteify(n))
+
+    key = get_key(pressed)
+
+    for n in chords:
+        yield convert_universal(key, n)
+
+if __name__ == "__main__":
+    for uni in get_universal(sys.argv[1]):
+        print roman[uni[0]], uni[1]
