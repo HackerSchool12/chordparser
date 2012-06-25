@@ -3,7 +3,7 @@ import sys
 from operator import add, and_
 from itertools import takewhile, imap
 
-chord_re = re.compile(r"\b([A-Ga-g][b#]?)(m)?((?:maj)?[0-9])?(sus[0-9]|add[0-9])?(/[A-Ga-g][b#]?)?\s")
+chord_re = re.compile(r">([A-Ga-g][b#]?)(m)?((?:maj)?[0-9])?(sus[0-9]|add[0-9])?(/[A-Ga-g][b#]?)?<")
 text_line = re.compile(r"(^[aA] \w|\w a \w)")
 
 def parse(file):
@@ -97,10 +97,13 @@ def convert_scale(pressed):
 def convert_universal( key, ch ):
     return (number[ ch[0] ] - key) % 12, ch[2]
 
-def ask_key(default='C'):
+def ask_key(default=''):
     i = raw_input("In which key?[%s]: " % default)
     if i == '':
         i = default
+
+    if i == '':
+        raise KeyError("no key")
 
     return number[i]
 
@@ -115,7 +118,7 @@ def get_key(pressed):
     if not keys:
         key = ask_key()
     elif len(keys) > 1:
-        key = ask_key(keys[0])
+        key = ask_key(chords[keys[0]])
     else:
         key = keys[0]
 

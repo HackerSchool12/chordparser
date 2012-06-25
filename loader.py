@@ -15,6 +15,12 @@ r = redis.StrictRedis(host = args.host, port=6379, db=0)
 file_list = glob.glob( args.filepath )
 
 for file in file_list:
-    ch = chordparser.get_universal( file )
-    chordmodel.make_model( r, ch )
-    print( file )
+    try:
+        print( file )
+        ch = list(chordparser.get_universal( file ))
+        try:
+            chordmodel.make_model( r, ch )
+        except redis.exceptions.ResponseError:
+            print "no chords"
+    except KeyError:
+        print "no key"
