@@ -1,3 +1,6 @@
+"""This module contains functions for parsing tab files,
+determining the key, and
+converting to universal representation."""
 import re
 import sys
 from operator import add, and_
@@ -7,6 +10,8 @@ chord_re = re.compile(r">([A-Ga-g][b#]?)(m)?((?:maj)?[0-9])?(sus[0-9]|add[0-9])?
 text_line = re.compile(r"(^[aA] \w|\w a \w)")
 
 def parse(file):
+    """Search lyric/tab file for things tha look like chords.
+    Return a sequence of them."""
     for line in file:
         if not text_line.search(line):
             for chord in chord_re.findall(line):
@@ -51,15 +56,20 @@ roman = {
 chords = dict((v,k) for k, v in number.iteritems())
 
 def minor(ch):
+    """Transform ch to a minor chord"""
     return ch[0] - 1, ch[1]
 
 def major7th(ch):
+    """Transform ch to a major sevent chord"""
     return [ch[1], 11]
 
 def minor7th(ch):
+    """Transform ch to a minor sevent chord"""
     return [ch[1], 10]
 
 def noteify(chord):
+    """Split chord into individual notes
+    Returns a triad."""
     root = number[ chord[0] ]
     quality = [4, 7]  
     if chord[1] == 'm':
@@ -72,12 +82,16 @@ def noteify(chord):
     return root, root+quality[0], root+quality[1]
 
 def track_notes(pressed, ch):
+    """Record in pressed the notes played in ch.
+    pressed is a list of notes"""
     for n in ch:
         pressed[n%12] += 1
 
 major_scale = [2,2,1,2,2,2,1]
 
 def reductions(f, init, l):
+    """Like reduce,
+    returns all intermediate values."""
     yield init
     for v in l:
         init = f(init, v)
@@ -90,14 +104,18 @@ for root in range(12):
     scales.append(scale)
 
 def convert_scale(pressed):
+    """convert from a list of note counts
+    to a sequence with the id of the pressed keys"""
     for i, n in enumerate(pressed):
         if n:
             yield i
 
 def convert_universal( key, ch ):
+    """translate chord from key to universal representation"""
     return (number[ ch[0] ] - key) % 12, ch[2]
 
 def ask_key(default=''):
+    """if we can't figure out the key, we ask the user."""
     i = raw_input("In which key?[%s]: " % default)
     if i == '':
         i = default
@@ -108,6 +126,9 @@ def ask_key(default=''):
     return number[i]
 
 def get_key(pressed):
+    """Get the key from all the pressed keys.
+    If non-diatonic chords are found
+    or multiple possible keys are found, we ask the user"""
     keys = []
     s = set( convert_scale( pressed ))
 
@@ -125,6 +146,8 @@ def get_key(pressed):
     return key
 
 def get_universal(f):
+    """Get all chords from file f
+    in universal format."""
     pressed = [0] * 12
     with open(f) as source:
         chords = list(parse(source))
