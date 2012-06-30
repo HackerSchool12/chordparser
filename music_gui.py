@@ -7,6 +7,7 @@ from mingus.containers.Track import Track
 from chordmodel import *
 from mingus.midi import MidiFileOut
 import tkFileDialog
+from chordparser import number
 
 roman = {
      0:"I",
@@ -45,6 +46,8 @@ class App:
             btn.pack(side=LEFT)
             
             self.buttons[ ch ] = btn 
+
+    #### other buttons ####
             
         self.pop = Button(frame, text='Del', foreground="#FF0000", background="#00FF00", command=self.pop_ch)
         self.pop.pack(side=BOTTOM)
@@ -67,6 +70,31 @@ class App:
         self.maj = Checkbutton( master, text="Major", variable = self.maj_var )
         self.maj.pack()
          
+	self.key_btn = Listbox(frame)
+        self.key_btn.bind("<<ListboxSelect>>", self.display_progression)
+	self.key_btn.pack(side=BOTTOM)
+        for k in number.keys():
+            self.key_btn.insert(END, k)
+
+    def get_key(self):
+        try:
+            sel = map(int, self.key_btn.curselection())
+            print sel
+            return number.keys()[sel[0]]
+        except IndexError:
+            return 'C'
+
+    def get_progression(self, prog):
+	return [ roman[ch[0]] + ch[1] for ch in prog ]
+
+    def display_progression(self, nop=None):
+        s = []
+        for ch in progressions.to_chords(self.get_progression(self.progression), self.get_key()):
+            c = NoteContainer(ch)
+            s.append(c.determine(True)[0])
+
+        self.prog_var.set( '  '.join( s ) )
+
     #### Callbacks #### 
     def print_ch( self, ch ):
         mod = ''
@@ -74,20 +102,16 @@ class App:
         mod = mod + ('7' if self.add7_var.get() else '')
         
 	self.progression.append(( ch, mod ))
-		
-	uprog = [ roman[ch[0]] + ch[1] for ch in self.progression ]
 
-        self.prog_var.set( '  '.join( uprog ) )
+        self.display_progression()
         print ch
 
     def pop_ch( self ):
         self.progression.pop()
-	uprog = [ roman[ch[0]] + ch[1] for ch in self.progression ]
-        self.prog_var.set( '  '.join( uprog ) )
+        self.display_progression()
         
     def play_prog( self ):
-	uprog = [ roman[ch[0]] + ch[1] for ch in self.progression ]
-	ch = progressions.to_chords(uprog, "C")
+	ch = progressions.to_chords(self.get_progression(self.progression), self.get_key())
 	nc = map(NoteContainer, ch)
 
 	t = Track()
@@ -97,8 +121,7 @@ class App:
 
     def save_midi( self ):
 	file_name = tkFileDialog.asksaveasfilename()
-	uprog = [ roman[ch[0]] + ch[1] for ch in self.progression ]
-	ch = progressions.to_chords(uprog, "C")
+	ch = progressions.to_chords(self.get_progression(self.progression), self.get_key())
 	nc = map(NoteContainer, ch)
 
 	t = Track()
@@ -107,8 +130,7 @@ class App:
 	MidiFileOut.write_Track( file_name,t)
 
     def suggest( self ):
-	uprog = [ roman[ ch[0]] + ch[1] for ch in next_chord( self.progression )]
-	concise =  frequencies( uprog )
+	concise =  frequencies( self.get_progression(next_chord(self.progression)) )
 	self.sug_var.set( '  '.join(["%s: %s" % (k, v) for k, v in concise.iteritems()]  ))
 	
 	
