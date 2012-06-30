@@ -36,6 +36,9 @@ class App:
         self.prog_var = StringVar()
         self.display = Label( master, textvariable = self.prog_var).pack()
         
+        self.uniprog_var = StringVar()
+        self.unidisplay = Label( master, textvariable = self.uniprog_var).pack()
+
 	self.sug_var = StringVar()
 	self.sug_label = Label( master, textvariable = self.sug_var).pack()	
 
@@ -90,14 +93,18 @@ class App:
 
     def display_progression(self, nop=None):
         s = []
-        for ch in progressions.to_chords(self.get_progression(self.progression), self.get_key()):
+        pr = self.get_progression(self.progression)
+        for ch in progressions.to_chords(pr, self.get_key()):
             c = NoteContainer(ch)
             s.append(c.determine(True)[0])
 
         self.prog_var.set( '  '.join( s ) )
-
+        self.uniprog_var.set('  '.join( pr ))
+    
     #### Callbacks #### 
     def print_ch( self, ch ):
+        ''' Append chord and modifier to progressioni and print updated progression to terminal.
+        '''
         mod = ''
 	mod = mod + ('M' if self.maj_var.get() else '')
         mod = mod + ('7' if self.add7_var.get() else '')
@@ -108,10 +115,14 @@ class App:
         print ch
 
     def pop_ch( self ):
+        ''' Pop last chord off progression list.
+        '''
         self.progression.pop()
         self.display_progression()
         
     def play_prog( self ):
+        ''' Saves chords to track and plays using fluidsynth.
+        '''
 	ch = progressions.to_chords(self.get_progression(self.progression), self.get_key())
 	nc = map(NoteContainer, ch)
 
@@ -121,6 +132,8 @@ class App:
 	fluidsynth.play_Track(t)
 
     def save_midi( self ):
+        '''Opens save dialog, converts progression list to chords in track, saves track midi.
+        '''
 	file_name = tkFileDialog.asksaveasfilename()
 	ch = progressions.to_chords(self.get_progression(self.progression), self.get_key())
 	nc = map(NoteContainer, ch)
@@ -131,11 +144,15 @@ class App:
 	MidiFileOut.write_Track( file_name,t)
 
     def suggest( self ):
+        '''Combines list of unique suggestions and save in sug_var (which displays as label)
+        '''
 	concise =  frequencies( self.get_progression(next_chord(self.progression)) )
 	self.sug_var.set( '  '.join(["%s: %s" % (k, v) for k, v in concise.iteritems()]  ))
 	
 	
 def frequencies( chords ):
+'''Tracks frequency of unique chords and returns a dictionary of the chord (universal notation) and its count.
+'''    
     initial = {}
     for ch in chords:
 	value = initial.setdefault( ch, 0 )

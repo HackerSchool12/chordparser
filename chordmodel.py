@@ -7,7 +7,8 @@ with open("data") as f:
 
 
 def next_chord( uch ):
-    '''uch lists UP TO 4 chords
+    ''' Takes list of UP TO 4 chords.
+        Generate the next chord in the series based on the data set.
     '''
 
     subl = uch[-4::]
