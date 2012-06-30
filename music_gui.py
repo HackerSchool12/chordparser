@@ -40,6 +40,13 @@ class App:
 	self.sug_label = Label( master, textvariable = self.sug_var).pack()	
 
     #### Chord Buttons ####
+         
+	self.key_btn = Listbox(frame)
+        self.key_btn.bind("<<ListboxSelect>>", self.display_progression)
+	self.key_btn.pack(side=BOTTOM)
+        for k in number.keys():
+            self.key_btn.insert(END, k)
+
         for ch in roman_num:
             
             btn = Button(frame, text=roman[ch], foreground="SystemMenuActiveText", command=partial( self.print_ch, ch ) )
@@ -69,12 +76,6 @@ class App:
         self.maj_var = BooleanVar()
         self.maj = Checkbutton( master, text="Major", variable = self.maj_var )
         self.maj.pack()
-         
-	self.key_btn = Listbox(frame)
-        self.key_btn.bind("<<ListboxSelect>>", self.display_progression)
-	self.key_btn.pack(side=BOTTOM)
-        for k in number.keys():
-            self.key_btn.insert(END, k)
 
     def get_key(self):
         try:
