@@ -5,8 +5,8 @@ import mingus.core.progressions as progressions
 from mingus.containers import NoteContainer
 from mingus.containers.Track import Track
 from chordmodel import *
-from ast import literal_eval
-import redis
+from mingus.midi import MidiFileOut
+import tkFileDialog
 
 roman = {
      0:"I",
@@ -27,8 +27,6 @@ class App:
        
 	fluidsynth.init("ChoriumRevA.SF2")
 
-	self.db = redis.StrictRedis(host='localhost', port=6379, db=0) 
-
         roman_num = [0,2,4,5,7,9,11]
 
         self.progression = []
@@ -43,7 +41,7 @@ class App:
     #### Chord Buttons ####
         for ch in roman_num:
             
-            btn = Button(frame, text=ch, foreground="SystemMenuActiveText", command=partial( self.print_ch, ch ) )
+            btn = Button(frame, text=roman[ch], foreground="SystemMenuActiveText", command=partial( self.print_ch, ch ) )
             btn.pack(side=LEFT)
             
             self.buttons[ ch ] = btn 
@@ -56,6 +54,9 @@ class App:
 
 	self.sugg = Button(frame, text='?', fg="blue", command=self.suggest)
 	self.sugg.pack(side=BOTTOM)	
+
+	self.save_btn = Button(frame, text='Save', command=self.save_midi)
+	self.save_btn.pack(side=TOP)
 
     #### Checkbox buttons for intervals ####
         self.add7_var = BooleanVar()
@@ -93,9 +94,20 @@ class App:
 	for chord in nc:
 	    t.add_notes(chord)
 	fluidsynth.play_Track(t)
-	
+
+    def save_midi( self ):
+	file_name = tkFileDialog.asksaveasfilename()
+	uprog = [ roman[ch[0]] + ch[1] for ch in self.progression ]
+	ch = progressions.to_chords(uprog, "C")
+	nc = map(NoteContainer, ch)
+
+	t = Track()
+	for chord in nc:
+	    t.add_notes(chord)
+	MidiFileOut.write_Track( file_name,t)
+
     def suggest( self ):
-	uprog = [ roman[ literal_eval(ch)[0]] + literal_eval(ch)[1] for ch in next_chord( self.db, self.progression )]
+	uprog = [ roman[ ch[0]] + ch[1] for ch in next_chord( self.progression )]
 	concise =  frequencies( uprog )
 	self.sug_var.set( '  '.join(["%s: %s" % (k, v) for k, v in concise.iteritems()]  ))
 	
