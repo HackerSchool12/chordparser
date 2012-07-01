@@ -52,20 +52,20 @@ class App:
 
         for ch in roman_num:
             
-            btn = Button(frame, text=roman[ch], foreground="SystemMenuActiveText", command=partial( self.print_ch, ch ) )
+            btn = Button(frame, text=roman[ch], command=partial( self.print_ch, ch ) )
             btn.pack(side=LEFT)
             
             self.buttons[ ch ] = btn 
 
     #### other buttons ####
             
-        self.pop = Button(frame, text='Del', foreground="#FF0000", background="#00FF00", command=self.pop_ch)
+        self.pop = Button(frame, text='Del', command=self.pop_ch)
         self.pop.pack(side=BOTTOM)
 
-	self.play = Button(frame, text='Play', foreground="black", command=self.play_prog)
+	self.play = Button(frame, text='Play', command=self.play_prog)
 	self.play.pack(side=TOP)
 
-	self.sugg = Button(frame, text='?', fg="blue", command=self.suggest)
+	self.sugg = Button(frame, text='?', command=self.suggest)
 	self.sugg.pack(side=BOTTOM)	
 
 	self.save_btn = Button(frame, text='Save', command=self.save_midi)
@@ -151,8 +151,8 @@ class App:
 	
 	
 def frequencies( chords ):
-'''Tracks frequency of unique chords and returns a dictionary of the chord (universal notation) and its count.
-'''    
+    '''Tracks frequency of unique chords and returns a dictionary of the chord (universal notation) and its count.
+    '''    
     initial = {}
     for ch in chords:
 	value = initial.setdefault( ch, 0 )
